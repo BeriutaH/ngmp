@@ -15,7 +15,7 @@ const (
 
 // 业务码默认消息提示
 var businessCodeMessages = map[int]string{
-	success:         "成功",
+	success:         "success",
 	invalidArgument: "参数错误",
 	logicException:  "系统出错了",
 	thirdException:  "服务出错了",

@@ -2,7 +2,6 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
-	"ngmp/controllers"
 	"ngmp/controllers/system"
 )
 
@@ -12,16 +11,16 @@ func SystemRouter(e *gin.RouterGroup) {
 	SystemRouter := e.Group("/system")
 	{
 		// 角色操作
-		SystemRouter.POST("/role/list", controllers.RoleData)
-		SystemRouter.POST("/role/add", controllers.RoleAdd)
-		SystemRouter.POST("/role/modify", controllers.RoleAdd)
-		SystemRouter.GET("/role/delete", controllers.RoleData)
+		SystemRouter.POST("/role/list", system.RoleData)
+		SystemRouter.POST("/role/add", system.RoleAdd)
+		SystemRouter.POST("/role/modify", system.RoleAdd)
+		SystemRouter.GET("/role/delete", system.RoleData)
 
 		// 权限操作
-		SystemRouter.POST("/menu/list", controllers.UserData)
+		SystemRouter.GET("/menu/list", system.MenuSelect)
 		SystemRouter.POST("/menu/add", system.MenuAdd)
-		SystemRouter.POST("/menu/modify", controllers.RoleAdd)
-		SystemRouter.GET("/menu/delete", controllers.RoleData)
+		SystemRouter.POST("/menu/modify", system.RoleAdd)
+		SystemRouter.GET("/menu/delete", system.RoleData)
 	}
 
 }

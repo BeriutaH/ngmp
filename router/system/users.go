@@ -15,7 +15,7 @@ func UserRouter(e *gin.RouterGroup) {
 	// 用户操作
 	UserRouter := e.Group("/user")
 	{
-		UserRouter.POST("/list", controllers.UserData)
+		UserRouter.GET("/list", controllers.UserData)
 		UserRouter.POST("/add", controllers.UserAdd)
 		UserRouter.GET("/blog", controllers.BlogComment)
 	}

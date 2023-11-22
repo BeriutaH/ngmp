@@ -10,16 +10,15 @@ func Routers() *gin.Engine {
 	var Router = gin.Default()
 
 	//// 公共路由
-	//PublicGroup := Router.Group("/")
-	//{
-	//	router.InitTestRouter(PublicGroup)
-	//}
+	PublicGroup := Router.Group("/")
+	{
+		system.SystemRouter(PublicGroup)
+	}
 
 	// 后台路由
 	AdminGroup := Router.Group("/admin")
 	{
 		system.UserRouter(AdminGroup)
-		system.SystemRouter(AdminGroup)
 	}
 
 	return Router

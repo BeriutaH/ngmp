@@ -125,6 +125,7 @@ func UserData(c *gin.Context) {
 
 }
 
+// UserAdd 添加用户
 func UserAdd(c *gin.Context) {
 	var user struct {
 		Username   string `json:"username"`
@@ -138,18 +139,6 @@ func UserAdd(c *gin.Context) {
 		return
 	}
 	// 判断用户是否已经存在
-	c.JSON(http.StatusOK, gin.H{
-		"message": "增加用户!!!!",
-	})
-}
-
-func RoleAdd(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "增加用户!!!!",
-	})
-}
-
-func RoleData(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "增加用户!!!!",
 	})
