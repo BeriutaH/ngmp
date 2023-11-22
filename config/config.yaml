@@ -1,0 +1,41 @@
+# 服务相关配置
+Server:
+  Name: "gin-skeleton"         # 应用名称
+  Mode: "development"          # 模式：development, test, production
+  SuperAccount: "admin"        # 超级账号，用于系统初始化配置，拥有系统所有功能权限
+  PwdSalt: "gin123"            # 密码盐
+  Port: 10086                  # 端口号
+
+# 日志相关配置
+Logs:
+  Level: "debug"            # 日志等级：debug, info, error, warn, panic, fatal
+  MaxSaveDay: 7             # 日志最大保存天数
+  OutFormat: "text"         # 日志输出格式：json, text
+  OutPath: "console"        # 日志输出路径：console, file
+
+# JWT相关配置
+JwtToken:
+  SignKey: "eotXIF6uDFSvli6r48ufE1NDB12uofMT"
+
+# 签名相关配置
+SignToken:
+  10000: "zq023m5yxhmkjtdxb6vywpc1ea7o8lf4"
+
+# DB相关配置
+DB:
+  Default:
+    Driver: "mysql"
+    Host: "127.0.0.1"
+    Port: 3306
+    Database: "ngmp"
+    Username: "root"
+    Password: "123456789"
+    Charset: "utf8mb4"
+
+# Redis相关配置
+Redis:
+  Default:
+    Host: "127.0.0.1"
+    Port: 6379
+    Database: 0
+    Password: ""

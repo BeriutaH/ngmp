@@ -8,30 +8,30 @@ package model
 
 // User 用户表
 type User struct {
-	ID         uint   `db:"id"`
-	Username   string `db:"username"`
-	Password   string `db:"password"`
-	Other      string `db:"other"`
-	RoleId     int    `db:"role_id"`
-	Permission string `db:"permission"`
+	BaseModel
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Other      string `json:"other"`
+	RoleId     int    `json:"role_id"`
+	Permission string `json:"permission"`
 }
 
 // Role 角色表
 type Role struct {
-	ID       uint   `db:"id"`
-	RoleName string `db:"name"`
+	BaseModel
+	RoleName string `json:"name"`
 }
 
 // Permission 权限表
 type Permission struct {
-	ID      uint   `db:"id"`
-	PerName string `db:"name"`
-	UrlPath string `db:"url_path"`
-	PerMenu int    `db:"per_menu"`
+	BaseModel
+	PerName string `json:"name"`
+	UrlPath string `json:"url_path"`
+	PerMenu int    `json:"per_menu"`
 }
 
 // PermissionMenu 权限菜单表
 type PermissionMenu struct {
-	ID       uint   `db:"permission_id"`
-	MenuName string `db:"name"`
+	BaseModel
+	MenuName string `json:"name"`
 }

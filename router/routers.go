@@ -12,8 +12,6 @@ func Include(opts ...Option) {
 	options = append(options, opts...)
 }
 
-// 初始化
-
 func Init() *gin.Engine {
 	r := gin.New()
 	for _, opt := range options {

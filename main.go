@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
-	"ngmp/model"
+	"ngmp/provider"
 	"ngmp/router"
+	"ngmp/router/system"
 )
 
 func main() {
 
 	//加载多个app的路由配置
-	router.Include(userdata.Routers, itemcode.Routers)
+	router.Include(system.UserRouters, system.ItemRouters)
 
 	// 创建数据库
-	model.Init()
+	provider.Init()
 	// 初始化路由
 	r := router.Init()
 
