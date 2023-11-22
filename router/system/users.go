@@ -5,13 +5,19 @@ import (
 	"ngmp/controllers"
 )
 
-// UserRouters Routers user 配置路由信息
-func UserRouters(e *gin.Engine) {
+// UserRouter Routers user 配置路由信息
+func UserRouter(e *gin.RouterGroup) {
+
+	// 登录登出
 	e.POST("/login", controllers.LoginFunc)
-	e.POST("/userdata", controllers.UserData)
-	e.POST("/useradd", controllers.UserAdd)
-	e.POST("/roleadd", controllers.RoleAdd)
-	e.GET("/roledata", controllers.RoleData)
-	e.GET("/blog", controllers.BlogComment)
+	//Router.POST("/login/login", admin.Login)
+	//Router.Use(middleware.TokenAuth()).POST("/login/logout", admin.Logout)
+	// 用户操作
+	UserRouter := e.Group("/user")
+	{
+		UserRouter.POST("/list", controllers.UserData)
+		UserRouter.POST("/add", controllers.UserAdd)
+		UserRouter.GET("/blog", controllers.BlogComment)
+	}
 
 }

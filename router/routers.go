@@ -1,21 +1,26 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"ngmp/router/system"
+)
 
-// Option 根据定义include函数用来注册子app中定义的路由,init函数用来进行路由的初始化操作
-type Option func(*gin.Engine)
+// Routers 路由
+func Routers() *gin.Engine {
+	var Router = gin.Default()
 
-var options []Option
+	//// 公共路由
+	//PublicGroup := Router.Group("/")
+	//{
+	//	router.InitTestRouter(PublicGroup)
+	//}
 
-// Include 注册app的路由配置
-func Include(opts ...Option) {
-	options = append(options, opts...)
-}
-
-func Init() *gin.Engine {
-	r := gin.New()
-	for _, opt := range options {
-		opt(r)
+	// 后台路由
+	AdminGroup := Router.Group("/admin")
+	{
+		system.UserRouter(AdminGroup)
+		system.SystemRouter(AdminGroup)
 	}
-	return r
+
+	return Router
 }

@@ -20,14 +20,6 @@ func Init() {
 	InitConfig()
 	config.DBDefault = gormMysql("default")
 	config.RedisDefault = getRedisDb("default")
-
-	// 数据库迁移
-	err := config.DBDefault.AutoMigrate(&model.User{}, &model.Role{}, &model.Permission{}, &model.PermissionMenu{})
-	fmt.Println("数据库迁移")
-	if err != nil {
-		fmt.Println(err)
-	}
-
 }
 
 func getRedisDb(connection string) *redis.Client {
@@ -49,7 +41,7 @@ func getRedisDb(connection string) *redis.Client {
 	})
 
 	if err := rdb.Ping(rdb.Context()).Err(); err != nil {
-		fmt.Println("Redis start err: ", err, connection)
+		log.Println("Redis数据库连接失败: ", err, connection)
 		return nil
 	}
 	return rdb
@@ -64,23 +56,23 @@ func gormMysql(connection string) *gorm.DB {
 	username := viper.GetString("DB." + connection + ".Username")
 	password := viper.GetString("DB." + connection + ".Password")
 	charset := viper.GetString("DB." + connection + ".Charset")
-	log.Println("host", host)
-	log.Println("port", port)
-	log.Println("database", database)
-	log.Println("username", username)
-	log.Println("password", password)
-	log.Println("charset", charset)
 
 	// 拼接mysql相关配置
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local", username, password, host, port, database, charset)
 
 	// 打开链接
-	fmt.Println("mysql连接执行")
+	log.Println("mysql连接执行")
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("数据库连接失败" + err.Error())
+		panic("Mysql数据库连接失败" + err.Error())
 	}
 
+	// 数据库迁移
+	err = db.AutoMigrate(&model.User{}, &model.Role{}, &model.Permission{})
+	log.Println("数据库迁移")
+	if err != nil {
+		fmt.Println(err)
+	}
 	sqlDB, _ := db.DB()
 	// 设置数据库连接吃最大连接数
 	sqlDB.SetMaxOpenConns(100)
@@ -104,6 +96,6 @@ func InitConfig() {
 	// 监听配置文件
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed: ", e.Name)
+		log.Println("Config file changed: ", e.Name)
 	})
 }

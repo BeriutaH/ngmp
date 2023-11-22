@@ -2,12 +2,16 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
-	"ngmp/controllers"
+	"ngmp/controllers/items"
 )
 
 // 关于主体项目相关的路由制定路由器
 
-func ItemRouters(e *gin.Engine) {
-	e.GET("/shop", controllers.ShopHello)
-	e.GET("/comment", controllers.ShopComment)
+func ItemRouter(e *gin.Engine) {
+	OperateRouter := e.Group("/operate")
+	{
+		OperateRouter.GET("/shop", items.ShopHello)
+		OperateRouter.GET("/comment", items.ShopComment)
+	}
+
 }
