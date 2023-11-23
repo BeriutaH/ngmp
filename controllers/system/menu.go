@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 	"ngmp/config"
 	"ngmp/model"
-	"ngmp/utils"
 	"ngmp/utils/response"
 	"time"
 )
@@ -15,9 +14,9 @@ import (
 // MenuAdd 添加权限
 func MenuAdd(c *gin.Context) {
 	var menu struct {
-		Name   string `json:"menu_name"`
-		ChName string `json:"chinese_name"`
-		Path   string `json:"menu_path"`
+		Name        string `json:"menu_name"`
+		ChineseName string `json:"chinese_name"`
+		Path        string `json:"menu_path"`
 	}
 	if err := c.ShouldBindJSON(&menu); err != nil {
 		response.ValidatorFailedJson(err, c)
@@ -42,9 +41,9 @@ func MenuAdd(c *gin.Context) {
 			ID:         perId,
 			CreateTime: time.Now(),
 		},
-		Name:   menu.Name,
-		ChName: menu.ChName,
-		Path:   menu.Path,
+		Name:        menu.Name,
+		ChineseName: menu.ChineseName,
+		Path:        menu.Path,
 	}
 
 	if err = config.DBDefault.Create(&newPer).Error; err != nil {
@@ -59,13 +58,8 @@ func MenuAdd(c *gin.Context) {
 func MenuSelect(c *gin.Context) {
 	// 需要过滤的字段
 	omitFields := []string{"path"}
+	var results []map[string]interface{}
 	// 获取权限表中的所有数据
-	var menus []model.Permission
-	config.DBDefault.Omit(omitFields...).Find(&menus)
-	menuList, err := utils.RemoveFields(menus, omitFields...)
-	if err != nil {
-		response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
-		return
-	}
-	response.SuccessJSON(menuList, "", c)
+	config.DBDefault.Model(model.NewPermission()).Omit(omitFields...).Find(&results)
+	response.SuccessJSON(results, "", c)
 }
