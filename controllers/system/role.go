@@ -74,7 +74,6 @@ func UpdateRole(c *gin.Context) {
 	roleID := c.Param("roleID")
 	//log.Println("roleID", roleID)
 	roleModel := model.NewRole()
-
 	// 查询角色是否存在
 	exitRole, err := roleModel.FindRoleById(roleID)
 	if err != nil {
@@ -91,20 +90,20 @@ func UpdateRole(c *gin.Context) {
 	}
 	// 开启数据库事务
 	tx := config.DBDefault.Begin()
+	defer tx.Rollback() // 回滚事务
+
 	//  更新角色名
 	newRoleName := roleInfo.NewRoleName
 	if newRoleName != "" {
 		exitRole.Name = newRoleName
 	}
-	//log.Println("roleInfo----", roleInfo)
 
 	// 更新或删除权限
 	permissions := roleInfo.Permissions
-	//log.Println("permissions=======", permissions)
 	if len(permissions) > 0 {
 		permissionsList, err := model.NewPermission().FindByIdList(permissions)
 		if err != nil {
-			tx.Rollback() // 回滚事务
+
 			response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
 			return
 		}
@@ -115,9 +114,10 @@ func UpdateRole(c *gin.Context) {
 			return
 		}
 	}
+	currentTime := time.Now()
+	exitRole.ModifyTime = &currentTime
 	// 在事务中执行数据库操作
-	if err := tx.Save(&exitRole).Error; err != nil {
-		tx.Rollback() // 回滚事务
+	if err = tx.Save(&exitRole).Error; err != nil {
 		response.InvalidArgumentJSON("更新权限失败: "+err.Error(), c)
 		return
 	}
@@ -136,13 +136,8 @@ func DelRole(c *gin.Context) {
 		删除角色本身
 	*/
 	tx := config.DBDefault.Begin()
-	// 在函数返回时，检查是否有错误发生
-	defer func() {
-		if r := recover(); r != nil {
-			// 回滚事务
-			tx.Rollback()
-		}
-	}()
+	// 回滚事务
+	defer tx.Rollback()
 	// 查询角色
 	roleObj, err := model.NewRole().FindRoleById(roleID)
 	if err != nil {

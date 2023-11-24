@@ -63,3 +63,73 @@ func MenuSelect(c *gin.Context) {
 	config.DBDefault.Model(model.NewPermission()).Omit(omitFields...).Find(&results)
 	response.SuccessJSON(results, "", c)
 }
+
+// UpdateMenu 更新权限
+func UpdateMenu(c *gin.Context) {
+	perID := c.Param("perID")
+	roleModel := model.NewPermission()
+
+	// 查询权限是否存在
+	exitPer, err := roleModel.FindPermissionById(perID)
+	if err != nil {
+		response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
+		return
+	}
+	var permissionsInfo struct {
+		NewName        string `json:"new_name" remark:"新权限名"`
+		NewChineseName string `json:"new_chinese_name" remark:"新权限中文名"`
+		NewPath        string `json:"new_path" remark:"新权限路径"`
+	}
+	if err = c.ShouldBindJSON(&permissionsInfo); err != nil {
+		response.ValidatorFailedJson(err, c)
+		return
+	}
+	//  更新角色名
+	newRoleName := permissionsInfo.NewName
+	if newRoleName != "" {
+		exitPer.Name = newRoleName
+	}
+	newChName := permissionsInfo.NewChineseName
+	if newChName != "" {
+		exitPer.ChineseName = newChName
+	}
+	newPath := permissionsInfo.NewPath
+	if newPath != "" {
+		exitPer.Path = newPath
+	}
+	currentTime := time.Now()
+	exitPer.ModifyTime = &currentTime
+	if err = config.DBDefault.Save(&exitPer).Error; err != nil {
+		response.InvalidArgumentJSON("更新权限失败: "+err.Error(), c)
+		return
+	}
+
+	response.SuccessJSON("", "", c)
+}
+
+// DelMenu 删除权限
+func DelMenu(c *gin.Context) {
+	perID := c.Param("perID")
+	roleModel := model.NewPermission()
+	// 查询权限是否存在
+	exitPer, err := roleModel.FindPermissionById(perID)
+	if err != nil {
+		response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
+		return
+	}
+	tx := config.DBDefault.Begin()
+	// 回滚事务
+	defer tx.Rollback()
+	err = tx.Model(&exitPer).Association("Roles").Clear()
+	if err != nil {
+		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
+		return
+	}
+	err = tx.Delete(&exitPer).Error
+	if err != nil {
+		response.InvalidArgumentJSON("清空权限失败: "+err.Error(), c)
+		return
+	}
+	tx.Commit()
+	response.SuccessJSON("", "", c)
+}

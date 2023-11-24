@@ -4,11 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"log"
 	"math/big"
-	"ngmp/utils/response"
 	"strings"
 )
 
@@ -52,21 +49,4 @@ func GenerateRandomString() string {
 	}
 
 	return result.String()
-}
-
-func GetMapValue(dict map[string]interface{}, key string, defaultValue int) interface{} {
-	if value, ok := dict[key]; ok {
-		return value
-	}
-	return defaultValue
-}
-
-// ErrorHandling 统一错误处理
-func ErrorHandling(errMsg string, err error, c *gin.Context, tx *gorm.DB) {
-	if err != nil {
-		_ = tx.Rollback()
-		response.InvalidArgumentJSON(errMsg+err.Error(), c)
-		return
-	}
-	return
 }

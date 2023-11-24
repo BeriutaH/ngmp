@@ -17,7 +17,7 @@ func AdminRouter(e *gin.RouterGroup) {
 	// 权限操作
 	e.GET("/menu/list", system.MenuSelect)
 	e.POST("/menu/add", system.MenuAdd)
-	e.POST("/menu/modify", system.RoleAdd)
-	e.POST("/menu/delete", system.RoleSelect)
+	e.PUT("/menu/modify/:perID", system.UpdateMenu)
+	e.DELETE("/menu/delete/:perID", system.DelMenu)
 
 }

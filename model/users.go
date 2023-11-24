@@ -125,6 +125,12 @@ func (p *Permission) FindByName(name string, path string) (permission *Permissio
 	return
 }
 
+// FindPermissionById 查找权限名称或path
+func (p *Permission) FindPermissionById(perId string) (permission *Permission, err error) {
+	err = config.DBDefault.Preload("Roles").First(&permission, "id = ?", perId).Error
+	return
+}
+
 // FindByIdList 查找权限Id
 func (p *Permission) FindByIdList(idList []string) (permissions []Permission, err error) {
 	err = config.DBDefault.Where("id IN (?)", idList).Find(&permissions).Error
