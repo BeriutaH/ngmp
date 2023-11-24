@@ -2,11 +2,9 @@ package system
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"log"
 	"ngmp/config"
 	"ngmp/model"
 	"ngmp/utils/response"
@@ -58,24 +56,23 @@ func RoleAdd(c *gin.Context) {
 		return
 	}
 	resp := map[string]string{"id": roleId}
-	response.SuccessJSON(resp, "创建角色成功", c)
+	response.SuccessJSON(resp, "", c)
 }
 
 // RoleSelect 查看角色
 func RoleSelect(c *gin.Context) {
-	omitFields := []string{"path", "name", "create_time", "modify_time"}
-	results, err := model.FindRoleAndPermissions(omitFields)
+	results2, err := model.NewRole().FindRoleByIdList("all")
 	if err != nil {
 		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
 		return
 	}
-	response.SuccessJSON(results, "", c)
+	response.SuccessJSON(results2, "", c)
 }
 
 // UpdateRole 更新角色
 func UpdateRole(c *gin.Context) {
 	roleID := c.Param("roleID")
-	log.Println("roleID", roleID)
+	//log.Println("roleID", roleID)
 	roleModel := model.NewRole()
 
 	// 查询角色是否存在
@@ -85,8 +82,8 @@ func UpdateRole(c *gin.Context) {
 		return
 	}
 	var roleInfo struct {
-		NewRoleName string   `json:"new_role_name"`
-		Permissions []string `json:"permissions"`
+		NewRoleName string   `json:"new_role_name" remark:"新角色名"`
+		Permissions []string `json:"permissions" remark:"最新的权限"`
 	}
 	if err := c.ShouldBindJSON(&roleInfo); err != nil {
 		response.ValidatorFailedJson(err, c)
@@ -99,44 +96,74 @@ func UpdateRole(c *gin.Context) {
 	if newRoleName != "" {
 		exitRole.Name = newRoleName
 	}
-	log.Println("roleInfo----", roleInfo)
+	//log.Println("roleInfo----", roleInfo)
 
 	// 更新或删除权限
 	permissions := roleInfo.Permissions
-	//permissions := utils.GetMapValue(roleInfo, "permissions", 0)
-	// 使用 Association 方法更新关联的权限
-	//if err := tx.Model(&Role{}).Association("Permissions").Replace(updatedRole.Permissions); err != nil {
-	//	tx.Rollback() // 回滚事务
-	//	c.JSON(500, gin.H{"error": "Failed to update permissions"})
-	//	return
-	//}
-	log.Println("permissions=======", permissions)
+	//log.Println("permissions=======", permissions)
 	if len(permissions) > 0 {
-		exitRole.Permissions = []model.Permission{} // 清空已有的权限
-		var permissionsList []model.Permission
-		tx.Where("id IN (?)", permissions).Find(&permissionsList)
-		//permissionsList, err := model.NewPermission().FindByIdList(permissions)
+		permissionsList, err := model.NewPermission().FindByIdList(permissions)
 		if err != nil {
+			tx.Rollback() // 回滚事务
 			response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
 			return
 		}
-		// 添加新的权限
-		exitRole.Permissions = permissionsList
 		// 替换关联的权限
 		if err := tx.Model(&exitRole).Association("Permissions").Replace(permissionsList); err != nil {
 			tx.Rollback() // 回滚事务
-			c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to reload permissions: %s", err.Error())})
+			response.InvalidArgumentJSON("替换关联的权限失败: "+err.Error(), c)
 			return
 		}
 	}
 	// 在事务中执行数据库操作
 	if err := tx.Save(&exitRole).Error; err != nil {
 		tx.Rollback() // 回滚事务
-		c.JSON(500, gin.H{"error": "Failed to update role"})
+		response.InvalidArgumentJSON("更新权限失败: "+err.Error(), c)
 		return
 	}
 	// 提交事务
 	tx.Commit()
 
+	response.SuccessJSON("", "", c)
+}
+
+// DelRole 删除角色
+func DelRole(c *gin.Context) {
+	roleID := c.Param("roleID")
+	/*
+		从关联表中删除角色与用户的关系。
+		从关联表中删除角色与权限的关系。
+		删除角色本身
+	*/
+	tx := config.DBDefault.Begin()
+	// 在函数返回时，检查是否有错误发生
+	defer func() {
+		if r := recover(); r != nil {
+			// 回滚事务
+			tx.Rollback()
+		}
+	}()
+	// 查询角色
+	roleObj, err := model.NewRole().FindRoleById(roleID)
+	if err != nil {
+		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
+		return
+	}
+	err = tx.Model(&roleObj).Association("Users").Clear()
+	if err != nil {
+		response.InvalidArgumentJSON("清空角色跟用户的关系失败: "+err.Error(), c)
+		return
+	}
+	err = tx.Model(&roleObj).Association("Permissions").Clear()
+	if err != nil {
+		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
+		return
+	}
+	err = tx.Delete(&roleObj).Error
+	if err != nil {
+		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
+		return
+	}
+	tx.Commit()
 	response.SuccessJSON("", "", c)
 }

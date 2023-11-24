@@ -15,7 +15,8 @@ func UserRouter(e *gin.RouterGroup) {
 	{
 		UserRouter.GET("/list", system.UserData)
 		UserRouter.POST("/add", system.UserAdd)
-		UserRouter.GET("/blog", system.BlogComment)
+		UserRouter.PUT("/modify/:userID", system.UpdateUser)
+		UserRouter.DELETE("/delete/:userID", system.DelUser)
 	}
 
 }

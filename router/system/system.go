@@ -12,7 +12,7 @@ func AdminRouter(e *gin.RouterGroup) {
 	e.GET("/role/list", system.RoleSelect)
 	e.POST("/role/add", system.RoleAdd)
 	e.PUT("/role/modify/:roleID", system.UpdateRole)
-	e.POST("/role/delete", system.RoleSelect)
+	e.DELETE("/role/delete/:roleID", system.DelRole)
 
 	// 权限操作
 	e.GET("/menu/list", system.MenuSelect)

@@ -4,32 +4,13 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"log"
 	"math/big"
+	"ngmp/utils/response"
 	"strings"
 )
-
-// ReturnMsg -----------对需要返回的信息进行封装,方便对数据进行进一步处理
-type ReturnMsg struct {
-	Status   int         `json:"status"`
-	Messages string      `json:"message"`
-	Result   interface{} `json:"result"`
-}
-
-// ReturnMsgFunc ------------对需要返回的信息进行赋值,并以结构体的形式返回
-func ReturnMsgFunc(status int, msg string, result interface{}) *ReturnMsg {
-	rm := new(ReturnMsg)
-	rm.Status = status
-	rm.Messages = msg
-	rm.Result = result
-	if _, ok := result.(int); ok == true {
-		a := map[string]interface{}{}
-		rm.Result = a
-	} else {
-		rm.Result = result
-	}
-	return rm
-}
 
 // RemoveFields 结构体列表删除指定的键
 func RemoveFields(dataList interface{}, omitFields ...string) ([]map[string]interface{}, error) {
@@ -78,4 +59,14 @@ func GetMapValue(dict map[string]interface{}, key string, defaultValue int) inte
 		return value
 	}
 	return defaultValue
+}
+
+// ErrorHandling 统一错误处理
+func ErrorHandling(errMsg string, err error, c *gin.Context, tx *gorm.DB) {
+	if err != nil {
+		_ = tx.Rollback()
+		response.InvalidArgumentJSON(errMsg+err.Error(), c)
+		return
+	}
+	return
 }

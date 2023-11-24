@@ -68,6 +68,9 @@ func responseJson(httpCode int, businessCode int, r interface{}, m string, c *gi
 	if m == "" && ok {
 		m = msg
 	}
+	if r == "" {
+		r = make(map[string]int)
+	}
 	// 返回JSON响应体
 	c.JSON(httpCode, gin.H{
 		"code":    businessCode,

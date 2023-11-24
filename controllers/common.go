@@ -3,7 +3,6 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"ngmp/utils"
 )
 
 // LoginFunc 登录
@@ -14,11 +13,11 @@ func LoginFunc(c *gin.Context) {
 		User     string `form:"username" json:"username" binding:"required"`
 		Password string `form:"password" json:"password" binding:"required"`
 	}
-	var loginJson Login
-	if err := c.ShouldBindJSON(&loginJson); err != nil {
-		c.JSON(http.StatusOK, utils.ReturnMsgFunc(400, "未携带正确信息!", 0))
-		return
-	}
+	//var loginJson Login
+	//if err := c.ShouldBindJSON(&loginJson); err != nil {
+	//	c.JSON(http.StatusOK, utils.ReturnMsgFunc(400, "未携带正确信息!", 0))
+	//	return
+	//}
 	// 判断用户名密码是否正确
 	//user := model.User{}
 	//// 将密码转换成md5
