@@ -15,8 +15,8 @@ import (
 func RoleAdd(c *gin.Context) {
 	// 添加角色时要选择权限
 	var role struct {
-		Name        string   `json:"name"` // 角色名
-		Permissions []string `json:"permissions"`
+		Name        string   `json:"name" remark:"角色名"  binding:"required"` // 角色名
+		Permissions []string `json:"permissions" remark:"权限ID列表"  binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&role); err != nil {
 		response.ValidatorFailedJson(err, c)
@@ -71,11 +71,11 @@ func RoleSelect(c *gin.Context) {
 
 // UpdateRole 更新角色
 func UpdateRole(c *gin.Context) {
-	roleID := c.Param("roleID")
+	//roleID := c.Param("roleID")
 	//log.Println("roleID", roleID)
 	roleModel := model.NewRole()
 	// 查询角色是否存在
-	exitRole, err := roleModel.FindRoleById(roleID)
+	exitRole, err := roleModel.FindRoleById(c.Param("roleID"))
 	if err != nil {
 		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
 		return
@@ -84,7 +84,7 @@ func UpdateRole(c *gin.Context) {
 		NewRoleName string   `json:"new_role_name" remark:"新角色名"`
 		Permissions []string `json:"permissions" remark:"最新的权限"`
 	}
-	if err := c.ShouldBindJSON(&roleInfo); err != nil {
+	if err = c.ShouldBindJSON(&roleInfo); err != nil {
 		response.ValidatorFailedJson(err, c)
 		return
 	}
@@ -108,7 +108,7 @@ func UpdateRole(c *gin.Context) {
 			return
 		}
 		// 替换关联的权限
-		if err := tx.Model(&exitRole).Association("Permissions").Replace(permissionsList); err != nil {
+		if err = tx.Model(&exitRole).Association("Permissions").Replace(permissionsList); err != nil {
 			tx.Rollback() // 回滚事务
 			response.InvalidArgumentJSON("替换关联的权限失败: "+err.Error(), c)
 			return
@@ -129,7 +129,7 @@ func UpdateRole(c *gin.Context) {
 
 // DelRole 删除角色
 func DelRole(c *gin.Context) {
-	roleID := c.Param("roleID")
+	//roleID := c.Param("roleID")
 	/*
 		从关联表中删除角色与用户的关系。
 		从关联表中删除角色与权限的关系。
@@ -139,7 +139,7 @@ func DelRole(c *gin.Context) {
 	// 回滚事务
 	defer tx.Rollback()
 	// 查询角色
-	roleObj, err := model.NewRole().FindRoleById(roleID)
+	roleObj, err := model.NewRole().FindRoleById(c.Param("roleID"))
 	if err != nil {
 		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
 		return

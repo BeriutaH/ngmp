@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-redis/redis/v8"
@@ -98,4 +99,35 @@ func InitConfig() {
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		log.Println("Config file changed: ", e.Name)
 	})
+}
+
+// SetData 将数据存储到 Redis
+func SetData(client *redis.Client, key string, data map[string]string) error {
+	ctx := context.Background()
+	return client.HMSet(ctx, key, data).Err()
+}
+
+// GetData 从 Redis 中获取数据
+func GetData(client *redis.Client, key string) (map[string]string, error) {
+	ctx := context.Background()
+	return client.HGetAll(ctx, key).Result()
+}
+
+// DelData 从 Redis 中删除数据
+func DelData(client *redis.Client, key string) error {
+	ctx := context.Background()
+	return client.Del(ctx, key).Err()
+}
+
+// SetRedisKey 将键值对存储到 Redis
+func SetRedisKey(client *redis.Client, key, value string, day time.Duration) error {
+	expiration := day * 24 * time.Hour
+	ctx := context.Background()
+	return client.Set(ctx, key, value, expiration).Err()
+}
+
+// GetRedisKey 根据键获取值
+func GetRedisKey(client *redis.Client, key string) (string, error) {
+	ctx := context.Background()
+	return client.Get(ctx, key).Result()
 }

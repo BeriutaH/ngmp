@@ -8,7 +8,7 @@ import (
 // 业务异常状态码
 const (
 	success         = 200   // 响应成功
-	invalidArgument = 40000 // 无效参数
+	invalidArgument = 400   // 无效参数
 	logicException  = 40020 // 逻辑异常
 	thirdException  = 500   // 三方异常
 )

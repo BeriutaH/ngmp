@@ -1,12 +1,9 @@
 package utils
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
-	"strings"
 )
 
 // RemoveFields 结构体列表删除指定的键
@@ -35,18 +32,4 @@ func RemoveFields(dataList interface{}, omitFields ...string) ([]map[string]inte
 	}
 
 	return jsonList, nil
-}
-
-func GenerateRandomString() string {
-	// 定义包含的字符集合
-	charSet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+[]{}|;:'\",.<>/?`~"
-
-	// 生成随机字符串
-	var result strings.Builder
-	for i := 0; i < 32; i++ {
-		randomIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charSet))))
-		result.WriteByte(charSet[randomIndex.Int64()])
-	}
-
-	return result.String()
 }

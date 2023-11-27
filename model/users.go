@@ -8,7 +8,7 @@ import (
 // User 用户表
 type User struct {
 	BaseModel
-	Username   string  `gorm:"type:varchar(255)" json:"username"`                       // 用户名
+	Username   string  `gorm:"type:varchar(255);unique" json:"username"`                // 用户名
 	Password   string  `gorm:"type:varchar(255);not null" json:"password,omitempty"`    // 密码
 	SecretCode string  `gorm:"type:varchar(255);not null" json:"secret_code,omitempty"` // 密码key
 	Remark     *string `json:"remark"`                                                  // 备注
@@ -23,6 +23,12 @@ func NewUser() *User {
 // FindUserById 基于用户id查询
 func (p *User) FindUserById(userId string) (user *User, err error) {
 	err = config.DBDefault.First(&user, "id = ?", userId).Error
+	return
+}
+
+// FindUserByName 基于用户name查询
+func (p *User) FindUserByName(userName string) (user *User, err error) {
+	err = config.DBDefault.First(&user, "username = ?", userName).Error
 	return
 }
 

@@ -3,7 +3,6 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"log"
 	"ngmp/config"
 	"ngmp/model"
 	"ngmp/utils"
@@ -72,7 +71,8 @@ func UserAdd(c *gin.Context) {
 		response.InvalidArgumentJSON("创建用户失败: "+err.Error(), c)
 		return
 	}
-	response.SuccessJSON("", "", c)
+	resp := map[string]string{"id": userId}
+	response.SuccessJSON(resp, "", c)
 }
 
 // UpdateUser 修改用户
@@ -87,16 +87,16 @@ func UpdateUser(c *gin.Context) {
 		response.ValidatorFailedJson(err, c)
 		return
 	}
-	userID := c.Param("userID")
+	//userID := c.Param("userID")
 	// 判断角色
-	userList, err := model.NewUser().FindUserByIdList([]string{userID})
+	userObj, err := model.NewUser().FindUserById(c.Param("userID"))
 	if err != nil {
 		response.LogicExceptionJSON("查询角色失败: "+err.Error(), c)
 		return
 	}
 	// 开启数据库事务
 	tx := config.DBDefault.Begin()
-	userObj := userList[0]
+	defer tx.Rollback() // 回滚事务
 	newUserName := user.Username
 	if newUserName != "" {
 		userObj.Username = newUserName
@@ -108,7 +108,7 @@ func UpdateUser(c *gin.Context) {
 		roleStructs := user.Roles
 		// 替换关联的角色
 		if err := tx.Model(&userObj).Association("Roles").Replace(roleStructs); err != nil {
-			tx.Rollback() // 回滚事务
+
 			response.LogicExceptionJSON("替换关联的角色失败: "+err.Error(), c)
 			return
 		}
@@ -116,8 +116,7 @@ func UpdateUser(c *gin.Context) {
 	currentTime := time.Now()
 	userObj.ModifyTime = &currentTime
 	// 在事务中执行数据库操作
-	if err := tx.Save(&userObj).Error; err != nil {
-		tx.Rollback() // 回滚事务
+	if err = tx.Save(&userObj).Error; err != nil {
 		response.InvalidArgumentJSON("更新用户失败: "+err.Error(), c)
 		return
 	}
@@ -127,25 +126,24 @@ func UpdateUser(c *gin.Context) {
 }
 
 func DelUser(c *gin.Context) {
-	userID := c.Param("userID")
-	log.Println(userID)
+	//userID := c.Param("userID")
+	//log.Println(userID)
 	// 查询用户，删除用户跟角色的多对多关系，删除用户，提交事务
-	userObj, err := model.NewUser().FindUserById(userID)
+	userObj, err := model.NewUser().FindUserById(c.Param("userID"))
 	if err != nil {
 		response.LogicExceptionJSON("当前用户不存在"+err.Error(), c)
 		return
 	}
 	// 开启数据库事务
 	tx := config.DBDefault.Begin()
+	defer tx.Rollback()
 	err = tx.Model(&userObj).Association("Roles").Clear()
 	if err != nil {
-		tx.Rollback()
 		response.LogicExceptionJSON("清空当前用户角色失败:"+err.Error(), c)
 		return
 	}
 	err = tx.Delete(userObj).Error
 	if err != nil {
-		tx.Rollback()
 		response.LogicExceptionJSON("删除用户失败:"+err.Error(), c)
 		return
 	}

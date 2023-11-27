@@ -4,19 +4,17 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"io"
+	"math/big"
+	"strconv"
+	"strings"
+	"time"
 )
-
-//加密过程：
-//  1、处理数据，对数据进行填充，采用PKCS7（当密钥长度不够时，缺几位补几个几）的方式。
-//  2、对数据进行加密，采用AES加密方法中CBC加密模式
-//  3、对得到的加密数据，进行base64加密，得到字符串
-// 解密过程相反
-
-// 16,24,32位字符串的话，分别对应AES-128，AES-192，AES-256 加密方法
-// key不能泄露
-var PwdKey = []byte("AB{DAB.DA[CDABCD23qaswed")
 
 // pkcs7Padding 填充
 func pkcs7Padding(data []byte, blockSize int) []byte {
@@ -50,12 +48,12 @@ func AesEncrypt(data []byte, key []byte) ([]byte, error) {
 	//填充
 	encryptBytes := pkcs7Padding(data, blockSize)
 	//初始化加密数据接收切片
-	crypted := make([]byte, len(encryptBytes))
+	encryption := make([]byte, len(encryptBytes))
 	//使用cbc加密模式
 	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize])
 	//执行加密
-	blockMode.CryptBlocks(crypted, encryptBytes)
-	return crypted, nil
+	blockMode.CryptBlocks(encryption, encryptBytes)
+	return encryption, nil
 }
 
 // AesDecrypt 解密
@@ -70,15 +68,15 @@ func AesDecrypt(data []byte, key []byte) ([]byte, error) {
 	//使用cbc
 	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
 	//初始化解密数据接收切片
-	crypted := make([]byte, len(data))
+	encryption := make([]byte, len(data))
 	//执行解密
-	blockMode.CryptBlocks(crypted, data)
+	blockMode.CryptBlocks(encryption, data)
 	//去除填充
-	crypted, err = pkcs7UnPadding(crypted)
+	encryption, err = pkcs7UnPadding(encryption)
 	if err != nil {
 		return nil, err
 	}
-	return crypted, nil
+	return encryption, nil
 }
 
 // EncryptByAes Aes加密 后 base64 再加
@@ -91,10 +89,42 @@ func EncryptByAes(data string, pwdKey string) (string, error) {
 }
 
 // DecryptByAes Aes 解密
-func DecryptByAes(data string, pwdKey string) ([]byte, error) {
+func DecryptByAes(data string, pwdKey string) (string, error) {
 	dataByte, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return AesDecrypt(dataByte, []byte(pwdKey))
+	decryption, err := AesDecrypt(dataByte, []byte(pwdKey))
+	if err != nil {
+		return "", err
+	}
+	return string(decryption), nil
+}
+
+func GenerateRandomString() string {
+	// 定义包含的字符集合
+	charSet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+[]{}|;:'\",.<>/?`~"
+
+	// 生成随机字符串
+	var result strings.Builder
+	for i := 0; i < 32; i++ {
+		randomIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charSet))))
+		result.WriteByte(charSet[randomIndex.Int64()])
+	}
+
+	return result.String()
+}
+
+// TokenMd5 md5获取token
+func TokenMd5() string {
+	curTime := time.Now().Unix()
+	//fmt.Println("curTime", curTime)
+	h := md5.New()
+	//fmt.Println("h-->", h)
+	//fmt.Println("strconv.FormatInt(curTime, 10)-->", strconv.FormatInt(curTime, 10))
+	io.WriteString(h, strconv.FormatInt(curTime, 10))
+	//fmt.Println("h-->", h)
+	token := fmt.Sprintf("%x", h.Sum(nil))
+	fmt.Println("token--->", token)
+	return token
 }

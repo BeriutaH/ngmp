@@ -11,5 +11,4 @@ var (
 
 	// RedisDefault redis默认连接
 	RedisDefault *redis.Client
-	Host         = "127.0.0.1"
 )

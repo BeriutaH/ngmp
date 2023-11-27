@@ -14,9 +14,9 @@ import (
 // MenuAdd 添加权限
 func MenuAdd(c *gin.Context) {
 	var menu struct {
-		Name        string `json:"menu_name"`
-		ChineseName string `json:"chinese_name"`
-		Path        string `json:"menu_path"`
+		Name        string `json:"menu_name" remark:"权限名"  binding:"required"`
+		ChineseName string `json:"chinese_name" remark:"权限中文名"  binding:"required"`
+		Path        string `json:"menu_path" remark:"路径"  binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&menu); err != nil {
 		response.ValidatorFailedJson(err, c)
@@ -57,10 +57,11 @@ func MenuAdd(c *gin.Context) {
 // MenuSelect 权限查询
 func MenuSelect(c *gin.Context) {
 	// 需要过滤的字段
-	omitFields := []string{"path"}
+	//omitFields := []string{"path"}
 	var results []map[string]interface{}
 	// 获取权限表中的所有数据
-	config.DBDefault.Model(model.NewPermission()).Omit(omitFields...).Find(&results)
+	//config.DBDefault.Model(model.NewPermission()).Omit(omitFields...).Find(&results)
+	config.DBDefault.Model(model.NewPermission()).Find(&results)
 	response.SuccessJSON(results, "", c)
 }
 
