@@ -50,8 +50,7 @@ func MenuAdd(c *gin.Context) {
 		response.InvalidArgumentJSON("创建权限失败: "+err.Error(), c)
 		return
 	}
-	resp := map[string]string{"id": perId}
-	response.SuccessJSON(resp, "创建权限成功", c)
+	response.SuccessJSON(model.BaseIdResult{ID: perId}, "创建权限成功", c)
 }
 
 // MenuSelect 权限查询
@@ -67,11 +66,9 @@ func MenuSelect(c *gin.Context) {
 
 // UpdateMenu 更新权限
 func UpdateMenu(c *gin.Context) {
-	perID := c.Param("perID")
 	roleModel := model.NewPermission()
-
 	// 查询权限是否存在
-	exitPer, err := roleModel.FindPermissionById(perID)
+	exitPer, err := roleModel.FindPermissionById(c.Param("perID"))
 	if err != nil {
 		response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
 		return
@@ -110,27 +107,26 @@ func UpdateMenu(c *gin.Context) {
 
 // DelMenu 删除权限
 func DelMenu(c *gin.Context) {
-	perID := c.Param("perID")
 	roleModel := model.NewPermission()
 	// 查询权限是否存在
-	exitPer, err := roleModel.FindPermissionById(perID)
+	exitPer, err := roleModel.FindPermissionById(c.Param("perID"))
 	if err != nil {
 		response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
 		return
 	}
-	tx := config.DBDefault.Begin()
-	// 回滚事务
-	defer tx.Rollback()
-	err = tx.Model(&exitPer).Association("Roles").Clear()
+	// 事务处理
+	err = config.DBDefault.Transaction(func(tx *gorm.DB) error {
+		if err = tx.Model(&exitPer).Association("Roles").Clear(); err != nil {
+			return err
+		}
+		if err = tx.Delete(&exitPer).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
+		response.InvalidArgumentJSON("删除权限失败: "+err.Error(), c)
 		return
 	}
-	err = tx.Delete(&exitPer).Error
-	if err != nil {
-		response.InvalidArgumentJSON("清空权限失败: "+err.Error(), c)
-		return
-	}
-	tx.Commit()
 	response.SuccessJSON("", "", c)
 }

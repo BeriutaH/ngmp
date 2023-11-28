@@ -55,8 +55,7 @@ func RoleAdd(c *gin.Context) {
 		response.InvalidArgumentJSON("创建角色失败: "+err.Error(), c)
 		return
 	}
-	resp := map[string]string{"id": roleId}
-	response.SuccessJSON(resp, "", c)
+	response.SuccessJSON(model.BaseIdResult{ID: roleId}, "", c)
 }
 
 // RoleSelect 查看角色
@@ -89,41 +88,37 @@ func UpdateRole(c *gin.Context) {
 		return
 	}
 	// 开启数据库事务
-	tx := config.DBDefault.Begin()
-	defer tx.Rollback() // 回滚事务
-
-	//  更新角色名
-	newRoleName := roleInfo.NewRoleName
-	if newRoleName != "" {
-		exitRole.Name = newRoleName
-	}
-
-	// 更新或删除权限
-	permissions := roleInfo.Permissions
-	if len(permissions) > 0 {
-		permissionsList, err := model.NewPermission().FindByIdList(permissions)
-		if err != nil {
-
-			response.InvalidArgumentJSON("查询权限失败: "+err.Error(), c)
-			return
+	err = config.DBDefault.Transaction(func(tx *gorm.DB) error {
+		//  更新角色名
+		newRoleName := roleInfo.NewRoleName
+		if newRoleName != "" {
+			exitRole.Name = newRoleName
 		}
-		// 替换关联的权限
-		if err = tx.Model(&exitRole).Association("Permissions").Replace(permissionsList); err != nil {
-			tx.Rollback() // 回滚事务
-			response.InvalidArgumentJSON("替换关联的权限失败: "+err.Error(), c)
-			return
+
+		// 更新或删除权限
+		permissions := roleInfo.Permissions
+		if len(permissions) > 0 {
+			permissionsList, err := model.NewPermission().FindByIdList(permissions)
+			if err != nil {
+				return err
+			}
+			// 替换关联的权限
+			if err = tx.Model(&exitRole).Association("Permissions").Replace(permissionsList); err != nil {
+				return err
+			}
 		}
-	}
-	currentTime := time.Now()
-	exitRole.ModifyTime = &currentTime
-	// 在事务中执行数据库操作
-	if err = tx.Save(&exitRole).Error; err != nil {
+		currentTime := time.Now()
+		exitRole.ModifyTime = &currentTime
+		// 在事务中执行数据库操作
+		if err = tx.Save(&exitRole).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		response.InvalidArgumentJSON("更新权限失败: "+err.Error(), c)
 		return
 	}
-	// 提交事务
-	tx.Commit()
-
 	response.SuccessJSON("", "", c)
 }
 
@@ -135,30 +130,26 @@ func DelRole(c *gin.Context) {
 		从关联表中删除角色与权限的关系。
 		删除角色本身
 	*/
-	tx := config.DBDefault.Begin()
-	// 回滚事务
-	defer tx.Rollback()
-	// 查询角色
-	roleObj, err := model.NewRole().FindRoleById(c.Param("roleID"))
+	err := config.DBDefault.Transaction(func(tx *gorm.DB) error {
+		// 查询角色
+		roleObj, err := model.NewRole().FindRoleById(c.Param("roleID"))
+		if err != nil {
+			return err
+		}
+		if err = tx.Model(&roleObj).Association("Users").Clear(); err != nil {
+			return err
+		}
+		if err = tx.Model(&roleObj).Association("Permissions").Clear(); err != nil {
+			return err
+		}
+		if err = tx.Delete(&roleObj).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
+		response.InvalidArgumentJSON("删除用户失败: "+err.Error(), c)
 		return
 	}
-	err = tx.Model(&roleObj).Association("Users").Clear()
-	if err != nil {
-		response.InvalidArgumentJSON("清空角色跟用户的关系失败: "+err.Error(), c)
-		return
-	}
-	err = tx.Model(&roleObj).Association("Permissions").Clear()
-	if err != nil {
-		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
-		return
-	}
-	err = tx.Delete(&roleObj).Error
-	if err != nil {
-		response.InvalidArgumentJSON("清空角色跟权限的关系失败: "+err.Error(), c)
-		return
-	}
-	tx.Commit()
 	response.SuccessJSON("", "", c)
 }

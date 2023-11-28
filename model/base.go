@@ -7,6 +7,11 @@ import (
 // LocalTime 自定义时间格式
 //type LocalTime time.Time
 
+// BaseIdResult ID结果响应
+type BaseIdResult struct {
+	ID string `json:"id"`
+}
+
 // BaseModel 基础Model
 type BaseModel struct {
 	ID         string     `json:"id" gorm:"type:varchar(255);primaryKey;unique"`

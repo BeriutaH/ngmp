@@ -3,6 +3,7 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"ngmp/config"
 	"ngmp/model"
 	"ngmp/utils"
@@ -24,12 +25,10 @@ func UserData(c *gin.Context) {
 
 // UserAdd 添加用户
 func UserAdd(c *gin.Context) {
-	db := config.DBDefault
-	//校验角色id是否存在
 	//加密密码，存入数据库
 	var user struct {
 		Username string   `json:"username"  remark:"用户名"  binding:"required"`
-		Password string   `json:"password" remark:"密码" binding:"required"`
+		Password string   `json:"password" remark:"密码" binding:"required,min=6,max=15"`
 		Remark   string   `json:"remark" remark:"备注"`
 		Roles    []string `json:"roles" remark:"角色id列表" binding:"required"`
 	}
@@ -67,12 +66,11 @@ func UserAdd(c *gin.Context) {
 		Remark:     &user.Remark,
 		Roles:      roleList,
 	}
-	if err = db.Create(&newUser).Error; err != nil {
+	if err = config.DBDefault.Create(&newUser).Error; err != nil {
 		response.InvalidArgumentJSON("创建用户失败: "+err.Error(), c)
 		return
 	}
-	resp := map[string]string{"id": userId}
-	response.SuccessJSON(resp, "", c)
+	response.SuccessJSON(model.BaseIdResult{ID: userId}, "", c)
 }
 
 // UpdateUser 修改用户
@@ -95,33 +93,33 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	// 开启数据库事务
-	tx := config.DBDefault.Begin()
-	defer tx.Rollback() // 回滚事务
-	newUserName := user.Username
-	if newUserName != "" {
-		userObj.Username = newUserName
-	}
-	if user.Remark != "" {
-		userObj.Remark = &user.Remark
-	}
-	if len(user.Roles) > 0 {
-		roleStructs := user.Roles
-		// 替换关联的角色
-		if err := tx.Model(&userObj).Association("Roles").Replace(roleStructs); err != nil {
-
-			response.LogicExceptionJSON("替换关联的角色失败: "+err.Error(), c)
-			return
+	err = config.DBDefault.Transaction(func(tx *gorm.DB) error {
+		newUserName := user.Username
+		if newUserName != "" {
+			userObj.Username = newUserName
 		}
-	}
-	currentTime := time.Now()
-	userObj.ModifyTime = &currentTime
-	// 在事务中执行数据库操作
-	if err = tx.Save(&userObj).Error; err != nil {
+		if user.Remark != "" {
+			userObj.Remark = &user.Remark
+		}
+		if len(user.Roles) > 0 {
+			roleStructs := user.Roles
+			// 替换关联的角色
+			if err := tx.Model(&userObj).Association("Roles").Replace(roleStructs); err != nil {
+				return err
+			}
+		}
+		currentTime := time.Now()
+		userObj.ModifyTime = &currentTime
+		// 在事务中执行数据库操作
+		if err = tx.Save(&userObj).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		response.InvalidArgumentJSON("更新用户失败: "+err.Error(), c)
 		return
 	}
-	// 提交事务
-	tx.Commit()
 	response.SuccessJSON("", "", c)
 }
 
@@ -135,19 +133,20 @@ func DelUser(c *gin.Context) {
 		return
 	}
 	// 开启数据库事务
-	tx := config.DBDefault.Begin()
-	defer tx.Rollback()
-	err = tx.Model(&userObj).Association("Roles").Clear()
-	if err != nil {
-		response.LogicExceptionJSON("清空当前用户角色失败:"+err.Error(), c)
-		return
-	}
-	err = tx.Delete(userObj).Error
+	err = config.DBDefault.Transaction(func(tx *gorm.DB) error {
+		err = tx.Model(&userObj).Association("Roles").Clear()
+		if err != nil {
+			return err
+		}
+		err = tx.Delete(userObj).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		response.LogicExceptionJSON("删除用户失败:"+err.Error(), c)
 		return
 	}
-	// 提交事务
-	tx.Commit()
 	response.SuccessJSON("", "", c)
 }

@@ -8,7 +8,6 @@ import (
 var (
 	// DBDefault mysql默认连接
 	DBDefault *gorm.DB
-
 	// RedisDefault redis默认连接
 	RedisDefault *redis.Client
 )

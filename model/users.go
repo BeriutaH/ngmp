@@ -8,11 +8,11 @@ import (
 // User 用户表
 type User struct {
 	BaseModel
-	Username   string  `gorm:"type:varchar(255);unique" json:"username"`                // 用户名
-	Password   string  `gorm:"type:varchar(255);not null" json:"password,omitempty"`    // 密码
-	SecretCode string  `gorm:"type:varchar(255);not null" json:"secret_code,omitempty"` // 密码key
-	Remark     *string `json:"remark"`                                                  // 备注
-	Roles      []Role  `gorm:"many2many:user_roles;" json:"roles,omitempty"`            // 用户跟角色对应关系
+	Username   string  `gorm:"type:varchar(255);unique" json:"username"`     // 用户名
+	Password   string  `gorm:"type:varchar(255);not null" json:"-"`          // 密码
+	SecretCode string  `gorm:"type:varchar(255);not null" json:"-"`          // 密码key
+	Remark     *string `json:"remark"`                                       // 备注
+	Roles      []Role  `gorm:"many2many:user_roles;" json:"roles,omitempty"` // 用户跟角色对应关系
 }
 
 // NewUser 初始化用户
@@ -34,11 +34,11 @@ func (p *User) FindUserByName(userName string) (user *User, err error) {
 
 // FindUserByIdList 基于id查询多个角色，全部或者指定的列表
 func (p *User) FindUserByIdList(userIds interface{}) (users []User, err error) {
-	omitList := []string{"password", "secret_code"}
+	//omitList := []string{"password", "secret_code"}
 	if userIds == "all" {
-		err = config.DBDefault.Preload("Roles").Omit(omitList...).Find(&users).Error
+		err = config.DBDefault.Preload("Roles").Find(&users).Error
 	} else {
-		err = config.DBDefault.Preload("Roles").Omit(omitList...).Find(&users, userIds).Error
+		err = config.DBDefault.Preload("Roles").Find(&users, userIds).Error
 	}
 	return
 }

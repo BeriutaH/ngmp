@@ -52,13 +52,12 @@ func LoginFunc(c *gin.Context) {
 			response.InvalidArgumentJSON("数据库操作失败: "+err.Error(), c)
 			return
 		}
-		userInfo := map[string]interface{}{"identity": "Bearer " + token}
+		userInfo := map[string]interface{}{"token": "Bearer " + token}
 		response.SuccessJSON(userInfo, "", c)
-		return
 	} else {
 		response.InvalidArgumentJSON("用户名或密码错误", c)
-		return
 	}
+	return
 }
 
 // LogoutFunc 登出
