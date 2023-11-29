@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // pkcs7Padding 填充
@@ -127,4 +128,16 @@ func TokenMd5() string {
 	token := fmt.Sprintf("%x", h.Sum(nil))
 	fmt.Println("token--->", token)
 	return token
+}
+
+// CamelToSnake 大小驼峰转下划线格式
+func CamelToSnake(str string) string {
+	bts := make([]byte, 0)
+	for idx, val := range str {
+		if unicode.IsUpper(val) && idx != 0 {
+			bts = append(bts, '_')
+		}
+		bts = append(bts, byte(unicode.ToLower(val)))
+	}
+	return string(bts)
 }

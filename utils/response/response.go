@@ -22,7 +22,7 @@ var businessCodeMessages = map[int]string{
 }
 
 // SuccessJSON 成功时返回
-func SuccessJSON(r interface{}, m string, c *gin.Context) {
+func SuccessJSON(r any, m string, c *gin.Context) {
 	responseJson(http.StatusOK, success, r, m, c)
 }
 
@@ -62,7 +62,7 @@ func RuntimeExceptionJSON(m string, c *gin.Context) {
 }
 
 // responseJson 响应JSON结构
-func responseJson(httpCode int, businessCode int, r interface{}, m string, c *gin.Context) {
+func responseJson(httpCode int, businessCode int, r any, m string, c *gin.Context) {
 	// 提示消息为空时，走默认提示
 	msg, ok := businessCodeMessages[businessCode]
 	if m == "" && ok {

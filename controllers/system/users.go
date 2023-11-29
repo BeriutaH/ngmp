@@ -13,8 +13,12 @@ import (
 
 // UserData 获取用户信息
 func UserData(c *gin.Context) {
-	// 需要过滤的字段
-	result, err := model.NewUser().FindUserByIdList("all")
+	var params model.BasePageParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		response.ValidatorFailedJson(err, c)
+		return
+	}
+	result, err := model.NewUser().FindUserList(params)
 	if err != nil {
 		response.LogicExceptionJSON("查询用户失败: "+err.Error(), c)
 		return
@@ -77,23 +81,29 @@ func UserAdd(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 	//校验角色id是否存在，无法更改密码
 	var user struct {
-		Username string       `json:"username"  remark:"用户名"`
-		Remark   string       `json:"remark" remark:"备注"`
-		Roles    []model.Role `json:"roles" remark:"最新角色列表"`
+		Username string   `json:"username"  remark:"用户名"`
+		Remark   string   `json:"remark" remark:"备注"`
+		Roles    []string `json:"roles" remark:"最新角色列表"`
 	}
 	if err := c.ShouldBindJSON(&user); err != nil {
 		response.ValidatorFailedJson(err, c)
 		return
 	}
-	//userID := c.Param("userID")
-	// 判断角色
+	// 判断用户
 	userObj, err := model.NewUser().FindUserById(c.Param("userID"))
+	if err != nil {
+		response.LogicExceptionJSON("查询用户失败: "+err.Error(), c)
+		return
+	}
+	// 查询角色
+	roleList, err := model.NewRole().FindRoleByIdList(user.Roles)
 	if err != nil {
 		response.LogicExceptionJSON("查询角色失败: "+err.Error(), c)
 		return
 	}
 	// 开启数据库事务
 	err = config.DBDefault.Transaction(func(tx *gorm.DB) error {
+
 		newUserName := user.Username
 		if newUserName != "" {
 			userObj.Username = newUserName
@@ -102,9 +112,8 @@ func UpdateUser(c *gin.Context) {
 			userObj.Remark = &user.Remark
 		}
 		if len(user.Roles) > 0 {
-			roleStructs := user.Roles
 			// 替换关联的角色
-			if err := tx.Model(&userObj).Association("Roles").Replace(roleStructs); err != nil {
+			if err = tx.Model(&userObj).Association("Roles").Replace(roleList); err != nil {
 				return err
 			}
 		}
@@ -124,8 +133,6 @@ func UpdateUser(c *gin.Context) {
 }
 
 func DelUser(c *gin.Context) {
-	//userID := c.Param("userID")
-	//log.Println(userID)
 	// 查询用户，删除用户跟角色的多对多关系，删除用户，提交事务
 	userObj, err := model.NewUser().FindUserById(c.Param("userID"))
 	if err != nil {

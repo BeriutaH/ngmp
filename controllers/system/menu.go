@@ -55,13 +55,17 @@ func MenuAdd(c *gin.Context) {
 
 // MenuSelect 权限查询
 func MenuSelect(c *gin.Context) {
-	// 需要过滤的字段
-	//omitFields := []string{"path"}
-	var results []map[string]interface{}
-	// 获取权限表中的所有数据
-	//config.DBDefault.Model(model.NewPermission()).Omit(omitFields...).Find(&results)
-	config.DBDefault.Model(model.NewPermission()).Find(&results)
-	response.SuccessJSON(results, "", c)
+	var params model.BasePageParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		response.ValidatorFailedJson(err, c)
+		return
+	}
+	result, err := model.NewPermission().FindPermissionList(params)
+	if err != nil {
+		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
+		return
+	}
+	response.SuccessJSON(result, "", c)
 }
 
 // UpdateMenu 更新权限

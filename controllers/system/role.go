@@ -60,12 +60,17 @@ func RoleAdd(c *gin.Context) {
 
 // RoleSelect 查看角色
 func RoleSelect(c *gin.Context) {
-	results2, err := model.NewRole().FindRoleByIdList("all")
+	var params model.BasePageParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		response.ValidatorFailedJson(err, c)
+		return
+	}
+	results, err := model.NewRole().FindRoleList(params)
 	if err != nil {
 		response.InvalidArgumentJSON("查询角色失败: "+err.Error(), c)
 		return
 	}
-	response.SuccessJSON(results2, "", c)
+	response.SuccessJSON(results, "", c)
 }
 
 // UpdateRole 更新角色

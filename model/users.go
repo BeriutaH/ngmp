@@ -1,7 +1,6 @@
 package model
 
 import (
-	"gorm.io/gorm"
 	"ngmp/config"
 )
 
@@ -33,14 +32,29 @@ func (p *User) FindUserByName(userName string) (user *User, err error) {
 }
 
 // FindUserByIdList 基于id查询多个角色，全部或者指定的列表
-func (p *User) FindUserByIdList(userIds interface{}) (users []User, err error) {
+func (p *User) FindUserByIdList(userIds any) (users []User, err error) {
 	//omitList := []string{"password", "secret_code"}
+
 	if userIds == "all" {
 		err = config.DBDefault.Preload("Roles").Find(&users).Error
 	} else {
 		err = config.DBDefault.Preload("Roles").Find(&users, userIds).Error
 	}
 	return
+}
+
+// FindUserList 按照分页展示查询相应的数据
+func (p *User) FindUserList(params BasePageParams) (*BasePageResult[User], error) {
+	// 需要过滤的字段
+	pr := &BasePageResult[User]{Items: make([]*User, 0), Total: 0}
+	err := config.DBDefault.Preload("Roles").Scopes(Paginate(params)).
+		Scopes(SearchInfo(params.BaseOrderByParams)).Find(&pr.Items).Scopes(DBCount).Count(&pr.Total).Error
+	if err != nil {
+		return nil, err
+	}
+	// 计算总页数
+	pr.CipherPage(params)
+	return pr, nil
 }
 
 // Role 角色表
@@ -69,7 +83,7 @@ func (p *Role) FindRoleById(roleId string) (role *Role, err error) {
 }
 
 // FindRoleByIdList 基于id查询多个角色，全部或者指定的列表
-func (p *Role) FindRoleByIdList(roleIds interface{}) (roles []Role, err error) {
+func (p *Role) FindRoleByIdList(roleIds any) (roles []Role, err error) {
 	if roleIds == "all" {
 		err = config.DBDefault.Preload("Permissions").Find(&roles).Error
 	} else {
@@ -78,37 +92,18 @@ func (p *Role) FindRoleByIdList(roleIds interface{}) (roles []Role, err error) {
 	return
 }
 
-// FindRoleAndPermissions 基于角色查询角色以及对应的权限
-func FindRoleAndPermissions(PerRemovedFields []string) ([]map[string]interface{}, error) {
-	roleModel := config.DBDefault.Model(NewRole())
-	var roles []Role
-	var results []map[string]interface{}
-	// 获取角色表中的所有数据
-	err := roleModel.Preload("Permissions", func(db *gorm.DB) *gorm.DB {
-		return db.Select("id, chinese_name")
-	}).Find(&roles).Error
+// FindRoleList 按照分页展示查询相应的数据
+func (p *Role) FindRoleList(params BasePageParams) (*BasePageResult[Role], error) {
+	// 需要过滤的字段
+	pr := &BasePageResult[Role]{Items: make([]*Role, 0), Total: 0}
+	err := config.DBDefault.Preload("Permissions").Scopes(Paginate(params)).
+		Scopes(SearchInfo(params.BaseOrderByParams)).Find(&pr.Items).Scopes(DBCount).Count(&pr.Total).Error
 	if err != nil {
 		return nil, err
 	}
-	for _, role := range roles {
-		var permissionsMap []map[string]interface{}
-		for _, per := range role.Permissions {
-			perMap := map[string]interface{}{
-				"id":           per.ID,
-				"chinese_name": per.ChineseName,
-			}
-			permissionsMap = append(permissionsMap, perMap)
-		}
-		roleMap := map[string]interface{}{
-			"name":        role.Name,
-			"id":          role.ID,
-			"permissions": permissionsMap,
-			"create_time": role.CreateTime,
-			"modify_time": role.ModifyTime,
-		}
-		results = append(results, roleMap)
-	}
-	return results, nil
+	// 计算总页数
+	pr.CipherPage(params)
+	return pr, nil
 }
 
 // Permission 权限表
@@ -135,6 +130,20 @@ func (p *Permission) FindByName(name string, path string) (permission *Permissio
 func (p *Permission) FindPermissionById(perId string) (permission *Permission, err error) {
 	err = config.DBDefault.Preload("Roles").First(&permission, "id = ?", perId).Error
 	return
+}
+
+// FindPermissionList 按照分页展示查询相应的数据
+func (p *Permission) FindPermissionList(params BasePageParams) (*BasePageResult[Permission], error) {
+	// 需要过滤的字段
+	pr := &BasePageResult[Permission]{Items: make([]*Permission, 0), Total: 0}
+	err := config.DBDefault.Scopes(Paginate(params)).Scopes(SearchInfo(params.BaseOrderByParams)).
+		Find(&pr.Items).Scopes(DBCount).Count(&pr.Total).Error
+	if err != nil {
+		return nil, err
+	}
+	// 计算总页数
+	pr.CipherPage(params)
+	return pr, nil
 }
 
 // FindByIdList 查找权限Id
