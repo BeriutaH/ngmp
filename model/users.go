@@ -32,9 +32,7 @@ func (p *User) FindUserByName(userName string) (user *User, err error) {
 }
 
 // FindUserByIdList 基于id查询多个角色，全部或者指定的列表
-func (p *User) FindUserByIdList(userIds any) (users []User, err error) {
-	//omitList := []string{"password", "secret_code"}
-
+func (p *User) FindUserByIdList(userIds any) (users []*User, err error) {
 	if userIds == "all" {
 		err = config.DBDefault.Preload("Roles").Find(&users).Error
 	} else {

@@ -62,7 +62,7 @@ func UserAdd(c *gin.Context) {
 	newUser := model.User{
 		BaseModel: model.BaseModel{
 			ID:         userId,
-			CreateTime: time.Now(),
+			CreateTime: model.LocalTime{time.Now()},
 		},
 		Username:   user.Username,
 		Password:   plaintext,
@@ -117,7 +117,7 @@ func UpdateUser(c *gin.Context) {
 				return err
 			}
 		}
-		currentTime := time.Now()
+		currentTime := model.LocalTime{time.Now()}
 		userObj.ModifyTime = &currentTime
 		// 在事务中执行数据库操作
 		if err = tx.Save(&userObj).Error; err != nil {

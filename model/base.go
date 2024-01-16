@@ -1,13 +1,41 @@
 package model
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"gorm.io/gorm"
+	"ngmp/config"
 	"time"
 )
 
 // LocalTime 自定义时间格式
-//type LocalTime time.Time
+type LocalTime struct {
+	time.Time
+}
+
+// MarshalJSON 实现 json.Marshaler 接口
+func (lt *LocalTime) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + lt.Format(config.TimeString) + `"`), nil
+}
+
+// Value 实现 driver.Valuer 接口
+func (lt LocalTime) Value() (driver.Value, error) {
+	return lt.Time, nil
+}
+
+// Scan 实现 driver.Scanner 接口
+func (lt *LocalTime) Scan(value interface{}) error {
+	if value == nil {
+		*lt = LocalTime{Time: time.Time{}}
+		return nil
+	}
+	parsedTime, ok := value.(time.Time)
+	if !ok {
+		return fmt.Errorf("扫描本地时间失败")
+	}
+	*lt = LocalTime{Time: parsedTime}
+	return nil
+}
 
 // BaseIdResult ID结果响应
 type BaseIdResult struct {
@@ -17,10 +45,8 @@ type BaseIdResult struct {
 // BaseModel 基础Model
 type BaseModel struct {
 	ID         string     `json:"id" gorm:"type:varchar(255);primaryKey;unique"`
-	CreateTime time.Time  `json:"create_time"`
-	ModifyTime *time.Time `json:"modify_time"`
-	//CreateTimeStr string     `json:"create_time" gorm:"-"`
-	//ModifyTimeStr *string    `json:"modify_time" gorm:"-"`
+	CreateTime LocalTime  `json:"create_time"`
+	ModifyTime *LocalTime `json:"modify_time"`
 }
 
 // BaseOrderByParams 排序请求参数
