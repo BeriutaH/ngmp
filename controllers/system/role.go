@@ -45,7 +45,7 @@ func RoleAdd(c *gin.Context) {
 	newRole := model.Role{
 		BaseModel: model.BaseModel{
 			ID:         roleId,
-			CreateTime: model.LocalTime{time.Now()},
+			CreateTime: model.LocalTime(time.Now()),
 		},
 		Name:        role.Name,
 		Permissions: permissions,
@@ -112,7 +112,7 @@ func UpdateRole(c *gin.Context) {
 				return err
 			}
 		}
-		currentTime := model.LocalTime{time.Now()}
+		currentTime := model.LocalTime(time.Now())
 		exitRole.ModifyTime = &currentTime
 		// 在事务中执行数据库操作
 		if err = tx.Save(&exitRole).Error; err != nil {

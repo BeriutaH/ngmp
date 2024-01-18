@@ -9,31 +9,29 @@ import (
 )
 
 // LocalTime 自定义时间格式
-type LocalTime struct {
-	time.Time
-}
+type LocalTime time.Time
 
 // MarshalJSON 实现 json.Marshaler 接口
 func (lt *LocalTime) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + lt.Format(config.TimeString) + `"`), nil
+	return []byte(`"` + time.Time(*lt).Format(config.TimeString) + `"`), nil
 }
 
 // Value 实现 driver.Valuer 接口
-func (lt LocalTime) Value() (driver.Value, error) {
-	return lt.Time, nil
+func (lt *LocalTime) Value() (driver.Value, error) {
+	return time.Time(*lt), nil
 }
 
 // Scan 实现 driver.Scanner 接口
 func (lt *LocalTime) Scan(value interface{}) error {
 	if value == nil {
-		*lt = LocalTime{Time: time.Time{}}
+		*lt = LocalTime{}
 		return nil
 	}
 	parsedTime, ok := value.(time.Time)
 	if !ok {
 		return fmt.Errorf("扫描本地时间失败")
 	}
-	*lt = LocalTime{Time: parsedTime}
+	*lt = LocalTime(parsedTime)
 	return nil
 }
 

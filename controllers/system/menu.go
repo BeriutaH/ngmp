@@ -39,7 +39,7 @@ func MenuAdd(c *gin.Context) {
 	newPer := model.Permission{
 		BaseModel: model.BaseModel{
 			ID:         perId,
-			CreateTime: model.LocalTime{time.Now()},
+			CreateTime: model.LocalTime(time.Now()),
 		},
 		Name:        menu.Name,
 		ChineseName: menu.ChineseName,
@@ -99,7 +99,7 @@ func UpdateMenu(c *gin.Context) {
 	if newPath != "" {
 		exitPer.Path = newPath
 	}
-	currentTime := model.LocalTime{time.Now()}
+	currentTime := model.LocalTime(time.Now())
 	exitPer.ModifyTime = &currentTime
 	if err = config.DBDefault.Save(&exitPer).Error; err != nil {
 		response.InvalidArgumentJSON("更新权限失败: "+err.Error(), c)
